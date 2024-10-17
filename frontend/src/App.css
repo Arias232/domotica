@@ -3,18 +3,17 @@
 }
 
 .App-logo {
-  height: 40vmin;
+  height: 265px; 
   pointer-events: none;
+  animation: spin infinite 5s linear; 
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.house-icon {
+  margin-bottom: 150px; 
 }
 
 .App-header {
-  background-color: #282c34;
+  background: linear-gradient(135deg, #332dd9, #a22b2b); 
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -22,13 +21,67 @@
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+  padding: 20px;
+  position: relative; 
 }
 
-.App-link {
-  color: #61dafb;
+.text-container {
+  text-align: center; 
+  animation: fadeIn 1.5s ease-in-out; 
 }
 
-@keyframes App-logo-spin {
+.App-header h1 {
+  font-size: 2em; 
+  margin: 10px 0; 
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
+}
+
+.App-header p {
+  font-size: 1.5em; 
+  margin: 10px 0; 
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
+}
+
+.App-button {
+  padding: 10px 20px;
+  font-size: 1em; 
+  background-color: #61dafb; 
+  color: #282c34; 
+  border: none; 
+  border-radius: 5px; 
+  cursor: pointer; 
+  transition: background-color 0.3s, transform 0.2s; 
+}
+
+.App-button:hover {
+  background-color: #21a1f1; 
+  transform: scale(1.05); 
+}
+
+.login-container {
+  position: absolute; 
+  top: 15px; 
+  right: 15px; 
+}
+
+
+.login-icon {
+  width: 150px; 
+  height: 150px; 
+  cursor: pointer; 
+  transition: transform 0.2s; 
+}
+
+.login-icon:hover {
+  transform: scale(1.1); 
+}
+
+.login-icon:active {
+  transform: scale(0.9); 
+}
+
+
+@keyframes spin {
   from {
     transform: rotate(0deg);
   }
@@ -36,3 +89,15 @@
     transform: rotate(360deg);
   }
 }
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px); 
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0); 
+  }
+}
+
