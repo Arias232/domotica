@@ -1,11 +1,101 @@
 const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 5000;
+const cors = require('cors');
+const port = 5000;
 
-app.get('/', (req, res) => {
-  res.send('Hello from Node.js backend!');
+// Middleware para parsear JSON
+app.use(cors());
+app.use(express.json());
+
+// Middleware para permitir CORS
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  next();
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Estados iniciales
+let ledStatus = Array(10).fill('off'); // 10 LEDs apagados por defecto
+let ventanaStatus = 'v_off';
+let puertaStatus = 'p_off';
+
+let sensorStatus = {
+  gas: 0,
+  agua: 0,
+  ldr: 0
+};
+
+// Ruta para controlar LEDs individualmente
+app.post('/control-led', (req, res) => {
+  const { index, action } = req.body;
+  if (index >= 0 && index < ledStatus.length && (action === 'on' || action === 'off')) {
+    ledStatus[index] = action;
+    console.log(`LED ${index + 1} ${action}`);
+    res.send({ message: `LED ${index + 1} ${action}`, status: ledStatus });
+  } else {
+    res.status(400).send({ error: 'Índice o acción no válida' });
+  }
+});
+
+// Ruta para encender/apagar todos los LEDs
+app.post('/control-todos-leds', (req, res) => {
+  const { action } = req.body;
+  if (action === 'on' || action === 'off') {
+    ledStatus = ledStatus.map(() => action);
+    console.log(`Todos los LEDs ${action}`);
+    res.send({ message: `Todos los LEDs ${action}`, status: ledStatus });
+  } else {
+    res.status(400).send({ error: 'Acción no válida para los LEDs' });
+  }
+});
+
+// Rutas para controlar la ventana
+app.post('/control-ventana', (req, res) => {
+  const { action } = req.body;
+  if (action === 'v' || action === 'v_off') {
+    ventanaStatus = action;
+    console.log(`Ventana ${action === 'v' ? 'abierta' : 'cerrada'}`);
+    res.send({ message: `Ventana ${action === 'v' ? 'abierta' : 'cerrada'}`, status: ventanaStatus });
+  } else {
+    res.status(400).send({ error: 'Acción no válida para la ventana' });
+  }
+});
+
+// Rutas para controlar la puerta
+app.post('/control-puerta', (req, res) => {
+  const { action } = req.body;
+  if (action === 'p' || action === 'p_off') {
+    puertaStatus = action;
+    console.log(`Puerta ${action === 'p' ? 'abierta' : 'cerrada'}`);
+    res.send({ message: `Puerta ${action === 'p' ? 'abierta' : 'cerrada'}`, status: puertaStatus });
+  } else {
+    res.status(400).send({ error: 'Acción no válida para la puerta' });
+  }
+});
+
+
+// Ruta para actualizar el estado de los sensores
+app.post('/estado-sensores', (req, res) => {
+  const { gas, agua, ldr } = req.body;
+  if (gas !== undefined && agua !== undefined && ldr !== undefined) {
+    sensorStatus = { gas, agua, ldr };
+    console.log('Estado de los sensores actualizado:', sensorStatus);
+    res.send({ message: 'Estado de los sensores actualizado', status: sensorStatus });
+  } else {
+    res.status(400).send({ error: 'Datos de sensores inválidos' });
+  }
+});
+
+
+
+// Rutas opcionales para consultar estados
+app.get('/estado-led', (req, res) => res.send({ status: ledStatus }));
+app.get('/estado-ventana', (req, res) => res.send({ status: ventanaStatus }));
+app.get('/estado-puerta', (req, res) => res.send({ status: puertaStatus }));
+app.get('/estado-sensores', (req, res) => {res.send({ status: sensorStatus });});
+
+
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Servidor escuchando en http://134.209.219.161:${port}`);
 });

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plano de una Casa</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        svg {
+            border: 1px solid black;
+            background-color: #f4f4f4;
+            width: 90%;
+            height: auto;
+        }
+
+        .room {
+            fill: #fff;
+            stroke: #000;
+            stroke-width: 2;
+        }
+
+        text {
+            font-size: 12px;
+            font-weight: bold;
+            fill: #000;
+        }
+
+        .control-button {
+            font-size: 12px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            color: white;
+            border: none;
+        }
+
+        .on {
+            background-color: green;
+        }
+
+        .off {
+            background-color: red;
+        }
+
+        .control-button i {
+            margin-right: 5px;
+        }
+
+        .door-open {
+            fill: green;
+            color: white;
+        }
+
+        .door-closed {
+            fill: red;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Plano de la Casa</h1>
+    
+    <svg viewBox="0 0 1000 650">
+        <!-- Bloque 1 -->
+        <rect class="room" x="50" y="150" width="150" height="150" />
+        <text x="120" y="220">1</text>
+        <foreignObject x="70" y="220" width="100" height="50">
+            <button id="button1" class="control-button off" onclick="sendPostRequest()">
+                <i class="fas fa-lightbulb"></i> Apagada
+            </button>
+        </foreignObject>
+
+        <!-- Bloque 2 con el botón centrado y más abajo -->
+        <rect class="room" x="50" y="300" width="150" height="250" />
+        <text x="120" y="500">2</text>
+        <foreignObject x="75" y="460" width="100" height="50">
+            <button id="button2" class="control-button off" onclick="toggleLight('button2')">
+                <i class="fas fa-lightbulb"></i> Apagada
+            </button>
+        </foreignObject>
+
+        <!-- Bloque 3 -->
+        <rect class="room" x="200" y="50" width="180" height="500" />
+        <text x="300" y="200">3</text>
+        <foreignObject x="250" y="150" width="100" height="50">
+            <button id="button3" class="control-button off" onclick="toggleLight('button3')">
+                <i class="fas fa-lightbulb"></i> Apagada
+            </button>
+        </foreignObject>
+        <foreignObject x="250" y="430" width="100" height="50">
+            <button id="button3b" class="control-button off" onclick="toggleLight('button3b')">
+                <i class="fas fa-lightbulb"></i> Apagada
+            </button>
+        </foreignObject>
+
+        <!-- Bloque 4 -->
+        <rect class="room" x="380" y="50" width="500" height="200" />
+        <text x="540" y="150">4</text>
+        <foreignObject x="550" y="150" width="100" height="50">
+            <button id="button4" class="control-button off" onclick="toggleLight('button4')">
+                <i class="fas fa-lightbulb"></i> Apagada
+            </button>
+        </foreignObject>
+
+        <!-- Bloque 5 -->
+        <rect class="room" x="380" y="250" width="500" height="100" />
+        <text x="560" y="300">5</text>
+        <foreignObject x="600" y="280" width="100" height="50">
+            <button id="button5" class="control-button off" onclick="toggleLight('button5')">
+                <i class="fas fa-lightbulb"></i> Apagada
+            </button>
+        </foreignObject>
+
+        <foreignObject x="850" y="280" width="100" height="50">
+            <button id="doorButton" class="control-button off" onclick="toggleDoor('doorButton')">
+                <i class="fas fa-door-open"></i> Cerrada
+            </button>
+        </foreignObject>
+
+        <!-- Bloque 6 -->
+        <rect class="room" x="380" y="350" width="150" height="200" />
+        <text x="420" y="500">6</text>
+        <foreignObject x="420" y="450" width="100" height="50">
+            <button id="button6" class="control-button off" onclick="toggleLight('button6')">
+                <i class="fas fa-lightbulb"></i> Apagada
+            </button>
+        </foreignObject>
+
+
+
+    <!-- Bloque 7 -->
+    <rect class="room" x="530" y="350" width="400" height="270" />
+    <text x="650" y="480">7</text>
+    <foreignObject x="680" y="480" width="100" height="50">
+        <button id="button7" class="control-button off" onclick="sendPostRequest7()">
+            <i class="fas fa-lightbulb"></i> Apagada
+        </button>
+    </foreignObject>
+
+
+        <!-- Bloque 8 -->
+        <rect class="room" x="50" y="280" width="150" height="100" />
+        <text x="120" y="340">8</text>
+        <foreignObject x="75" y="310" width="100" height="50">
+            <button id="button8" class="control-button off" onclick="toggleLight('button8')">
+                <i class="fas fa-lightbulb"></i> Apagada
+            </button>
+        </foreignObject>
+    </svg>
+
+    <!-- Selector de hora -->
+    <div>
+        <label for="timePicker">Selecciona la hora (HH:MM):</label>
+        <input type="time" id="timePicker" value="14:00">
+        <button id="setTimeButton">Establecer hora</button>
+    </div>
+
+    <script>
+        let targetTime = null;
+
+        function toggleLight(buttonId) {
+            var button = document.getElementById(buttonId);
+            if (button.classList.contains('off')) {
+                button.classList.remove('off');
+                button.classList.add('on');
+                button.innerHTML = '<i class="fas fa-lightbulb"></i> Encendida';
+            } else {
+                button.classList.remove('on');
+                button.classList.add('off');
+                button.innerHTML = '<i class="fas fa-lightbulb"></i> Apagada';
+            }
+        }
+
+        function toggleDoor(buttonId) {
+            var doorButton = document.getElementById(buttonId);
+            if (doorButton.classList.contains('door-closed')) {
+                doorButton.classList.remove('door-closed');
+                doorButton.classList.add('door-open');
+                doorButton.innerHTML = '<i class="fas fa-door-open"></i> Abierta'; 
+            } else {
+                doorButton.classList.remove('door-open');
+                doorButton.classList.add('door-closed');
+                doorButton.innerHTML = '<i class="fas fa-door-closed"></i> Cerrada'; 
+            }
+        }
+
+        function sendPostRequest() {
+            fetch('http://134.209.219.161:5000/control-todos-leds', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: 'off' }) // Cambié 'off' a 'on' para encender las luces
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Todas las luces encendidas.');
+                    document.getElementById('button1').textContent = 'Encendida';
+                    document.getElementById('button1').classList.remove('off');
+                    document.getElementById('button1').classList.add('on');
+                    return response.json(); 
+                } else {
+                    throw new Error('Error al encender las luces: ' + response.statusText);
+                }
+            })
+            .then(data => {
+                console.log('Respuesta del servidor:', data);
+            })
+            .catch(error => {
+                console.error('Error de red:', error);
+            });
+        }
+
+
+function sendPostRequest7() {
+    // Obtener el botón y el estado actual
+    const button = document.getElementById('button7');
+    const currentState = button.classList.contains('off') ? 'off' : 'on';
+    
+    // Cambiar el cuerpo de la solicitud según el estado actual
+    const newState = currentState === 'off' ? 'on' : 'off';
+    button.textContent = newState === 'off' ? 'Apagada' : 'Encendida';
+    button.classList.toggle('off');
+    button.classList.toggle('on');
+
+    fetch('http://134.209.219.161:5000/control-led', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ index: 7, action: newState })
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log(`LED 7 ${newState === 'on' ? 'encendida.' : 'apagada.'}`);
+            return response.json();
+        } else {
+            throw new Error('Error al cambiar el estado de la LED: ' + response.statusText);
+        }
+    })
+    .then(data => {
+        console.log('Respuesta del servidor:', data);
+    })
+    .catch(error => {
+        console.error('Error en la solicitud:', error);
+    });
+}
+
+
+
+        // Establecer la hora seleccionada
+        document.getElementById('setTimeButton').onclick = function() {
+            const timePicker = document.getElementById('timePicker');
+            targetTime = timePicker.value; // Formato HH:MM
+            console.log('Hora establecida para encender las luces:', targetTime);
+        };
+
+        function getCurrentTime() {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; // Formato HH:MM
+        }
+
+        function checkAndExecute() {
+            const currentTime = getCurrentTime();
+            if (targetTime && currentTime === targetTime) {
+                sendPostRequest(); // Llama a tu función aquí
+                console.log('Se ha ejecutado sendPostRequest() a las ' + currentTime);
+                targetTime = null; // Reinicia el objetivo después de ejecutarse
+            }
+        }
+                // Establecer la hora seleccionada
+                document.getElementById('setTimeButton').onclick = function() {
+            const timePicker = document.getElementById('timePicker');
+            targetTime = timePicker.value; // Formato HH:MM
+            console.log('Hora establecida para encender las luces:', targetTime);
+        };
+
+        function getCurrentTime() {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; // Formato HH:MM
+        }
+
+        function checkAndExecute() {
+            const currentTime = getCurrentTime();
+            if (targetTime && currentTime === targetTime) {
+                sendPostRequest(); // Llama a tu función aquí
+                console.log('Se ha ejecutado sendPostRequest() a las ' + currentTime);
+                targetTime = null; // Reinicia el objetivo después de ejecutarse
+            }
+        }
+                // Establecer la hora seleccionada
+                document.getElementById('setTimeButton').onclick = function() {
+            const timePicker = document.getElementById('timePicker');
+            targetTime = timePicker.value; // Formato HH:MM
+            console.log('Hora establecida para encender las luces:', targetTime);
+        };
+
+        function getCurrentTime() {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; // Formato HH:MM
+        }
+
+        function checkAndExecute() {
+            const currentTime = getCurrentTime();
+            if (targetTime && currentTime === targetTime) {
+                sendPostRequest(); // Llama a tu función aquí
+                console.log('Se ha ejecutado sendPostRequest() a las ' + currentTime);
+                targetTime = null; // Reinicia el objetivo después de ejecutarse
+            }
+        }
+                // Establecer la hora seleccionada
+                document.getElementById('setTimeButton').onclick = function() {
+            const timePicker = document.getElementById('timePicker');
+            targetTime = timePicker.value; // Formato HH:MM
+            console.log('Hora establecida para encender las luces:', targetTime);
+        };
+
+        function getCurrentTime() {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; // Formato HH:MM
+        }
+
+        function checkAndExecute() {
+            const currentTime = getCurrentTime();
+            if (targetTime && currentTime === targetTime) {
+                sendPostRequest(); // Llama a tu función aquí
+                console.log('Se ha ejecutado sendPostRequest() a las ' + currentTime);
+                targetTime = null; // Reinicia el objetivo después de ejecutarse
+            }
+        }
+                // Establecer la hora seleccionada
+                document.getElementById('setTimeButton').onclick = function() {
+            const timePicker = document.getElementById('timePicker');
+            targetTime = timePicker.value; // Formato HH:MM
+            console.log('Hora establecida para encender las luces:', targetTime);
+        };
+
+        function getCurrentTime() {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; // Formato HH:MM
+        }
+
+        function checkAndExecute() {
+            const currentTime = getCurrentTime();
+            if (targetTime && currentTime === targetTime) {
+                sendPostRequest(); // Llama a tu función aquí
+                console.log('Se ha ejecutado sendPostRequest() a las ' + currentTime);
+                targetTime = null; // Reinicia el objetivo después de ejecutarse
+            }
+        }
+                // Establecer la hora seleccionada
+                document.getElementById('setTimeButton').onclick = function() {
+            const timePicker = document.getElementById('timePicker');
+            targetTime = timePicker.value; // Formato HH:MM
+            console.log('Hora establecida para encender las luces:', targetTime);
+        };
+
+        function getCurrentTime() {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; // Formato HH:MM
+        }
+
+        function checkAndExecute() {
+            const currentTime = getCurrentTime();
+            if (targetTime && currentTime === targetTime) {
+                sendPostRequest(); // Llama a tu función aquí
+                console.log('Se ha ejecutado sendPostRequest() a las ' + currentTime);
+                targetTime = null; // Reinicia el objetivo después de ejecutarse
+            }
+        }
+                // Establecer la hora seleccionada
+                document.getElementById('setTimeButton').onclick = function() {
+            const timePicker = document.getElementById('timePicker');
+            targetTime = timePicker.value; // Formato HH:MM
+            console.log('Hora establecida para encender las luces:', targetTime);
+        };
+
+        function getCurrentTime() {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; // Formato HH:MM
+        }
+
+        function checkAndExecute() {
+            const currentTime = getCurrentTime();
+            if (targetTime && currentTime === targetTime) {
+                sendPostRequest(); // Llama a tu función aquí
+                console.log('Se ha ejecutado sendPostRequest() a las ' + currentTime);
+                targetTime = null; // Reinicia el objetivo después de ejecutarse
+            }
+        }
+                // Establecer la hora seleccionada
+                document.getElementById('setTimeButton').onclick = function() {
+            const timePicker = document.getElementById('timePicker');
+            targetTime = timePicker.value; // Formato HH:MM
+            console.log('Hora establecida para encender las luces:', targetTime);
+        };
+
+        function getCurrentTime() {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; // Formato HH:MM
+        }
+
+        function checkAndExecute() {
+            const currentTime = getCurrentTime();
+            if (targetTime && currentTime === targetTime) {
+                sendPostRequest(); // Llama a tu función aquí
+                console.log('Se ha ejecutado sendPostRequest() a las ' + currentTime);
+                targetTime = null; // Reinicia el objetivo después de ejecutarse
+            }
+        }
+                // Establecer la hora seleccionada
+                document.getElementById('setTimeButton').onclick = function() {
+            const timePicker = document.getElementById('timePicker');
+            targetTime = timePicker.value; // Formato HH:MM
+            console.log('Hora establecida para encender las luces:', targetTime);
+        };
+
+        function getCurrentTime() {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; // Formato HH:MM
+        }
+
+        function checkAndExecute() {
+            const currentTime = getCurrentTime();
+            if (targetTime && currentTime === targetTime) {
+                sendPostRequest(); // Llama a tu función aquí
+                console.log('Se ha ejecutado sendPostRequest() a las ' + currentTime);
+                targetTime = null; // Reinicia el objetivo después de ejecutarse
+            }
+        }
+                // Establecer la hora seleccionada
+                document.getElementById('setTimeButton').onclick = function() {
+            const timePicker = document.getElementById('timePicker');
+            targetTime = timePicker.value; // Formato HH:MM
+            console.log('Hora establecida para encender las luces:', targetTime);
+        };
+
+        function getCurrentTime() {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; // Formato HH:MM
+        }
+
+        function checkAndExecute() {
+            const currentTime = getCurrentTime();
+            if (targetTime && currentTime === targetTime) {
+                sendPostRequest(); // Llama a tu función aquí
+                console.log('Se ha ejecutado sendPostRequest() a las ' + currentTime);
+                targetTime = null; // Reinicia el objetivo después de ejecutarse
+            }
+        }
+
+
+        // Comienza a comprobar la hora cada segundo
+        setInterval(checkAndExecute, 1000);
+    </script>
+</body>
+</html>
