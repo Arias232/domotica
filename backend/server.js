@@ -1,7 +1,43 @@
+//Firebase admin
+const admin = require('firebase-admin');
+const serviceAccount = require('path/to/your/firebase-adminsdk.json');
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+
 const express = require('express');
 const app = express();
 const cors = require('cors');
+const admin = require('firebase-admin');
 const port = 5000;
+
+// Middleware para verificar el token de autenticación
+app.use(async (req, res, next) => {
+  const idToken = req.headers.authorization?.split('Bearer ')[1];
+
+  if (!idToken) {
+    return res.status(403).send('No se ha proporcionado un token');
+  }
+
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    req.user = decodedToken;
+    next();
+  } catch (error) {
+    return res.status(401).send('Token inválido');
+  }
+});
+
+// Ejemplo de ruta protegida
+app.get('/protected', (req, res) => {
+  res.send(`Hola ${req.user.email}, estás autenticado`);
+});
+
+app.listen(5000, () => {
+  console.log('Servidor escuchando en el puerto 5000');
+});
 
 // Middleware para parsear JSON
 app.use(cors());
