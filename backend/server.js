@@ -1,80 +1,63 @@
-//Firebase admin
-const admin = require('firebase-admin');
-const serviceAccount = require('path/to/your/firebase-adminsdk.json');
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
-
-
 const express = require('express');
-const app = express();
 const cors = require('cors');
-const admin = require('firebase-admin');
+const { Pool } = require('pg');
+const bodyParser = require('body-parser');
+
+const app = express();
 const port = 5000;
 
-// Middleware para verificar el token de autenticación
-app.use(async (req, res, next) => {
-  const idToken = req.headers.authorization?.split('Bearer ')[1];
-
-  if (!idToken) {
-    return res.status(403).send('No se ha proporcionado un token');
-  }
-
-  try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    req.user = decodedToken;
-    next();
-  } catch (error) {
-    return res.status(401).send('Token inválido');
-  }
+// Configuración de PostgreSQL
+const pool = new Pool({
+  user: 'doadmin',
+  host: 'db-postgresql-nyc1-78611-do-user-12658703-0.k.db.ondigitalocean.com',
+  database: 'defaultdb',
+  password: 'AVNS_pv7340WdNUnbwLrv0IM',
+  port: 25060,
+  ssl: { rejectUnauthorized: false }
 });
 
-// Ejemplo de ruta protegida
-app.get('/protected', (req, res) => {
-  res.send(`Hola ${req.user.email}, estás autenticado`);
-});
-
-app.listen(5000, () => {
-  console.log('Servidor escuchando en el puerto 5000');
-});
-
-// Middleware para parsear JSON
+// Middlewares
 app.use(cors());
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// Middleware para permitir CORS
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  next();
-});
+// Variables de estado
+let ledStatus = Array(10).fill('off'); // Estado inicial de 10 LEDs apagados
+let ldrState = 0;
+let gasState = 0;
+let humidityState = 0;
+let waterLevelState = 0;
 
-// Estados iniciales
-let ledStatus = Array(10).fill('off'); // 10 LEDs apagados por defecto
-let ventanaStatus = 'v_off';
-let puertaStatus = 'p_off';
+// Conexión a la base de datos
+pool.connect()
+  .then(client => {
+    console.log('Conectado a la base de datos PostgreSQL');
+    client.release();
+  })
+  .catch(err => console.error('Error al conectar a la base de datos', err));
 
-let sensorStatus = {
-  gas: 0,
-  agua: 0,
-  ldr: 0
-};
+  app.post('/control-led', async (req, res) => {
+    const { index, action } = req.body;
+    if (index >= 0 && index < ledStatus.length && (action === 'on' || action === 'off')) {
+      ledStatus[index] = action;
+      console.log(`LED ${index + 1} ${action}`);
+  
+      // Guardar el nuevo estado en la base de datos
+      const timestamp = new Date();
+      try {
+        const queryText = 'INSERT INTO led_status (led_index, estado, fecha_hora) VALUES ($1, $2, $3)';
+        const values = [index, action, timestamp];
+        await pool.query(queryText, values);
+      } catch (err) {
+        console.error('Error al registrar el estado del LED en la base de datos', err);
+      }
+  
+      res.send({ message: `LED ${index + 1} ${action}`, status: ledStatus });
+    } else {
+      res.status(400).send({ error: 'Índice o acción no válida' });
+    }
+  });
 
-// Ruta para controlar LEDs individualmente
-app.post('/control-led', (req, res) => {
-  const { index, action } = req.body;
-  if (index >= 0 && index < ledStatus.length && (action === 'on' || action === 'off')) {
-    ledStatus[index] = action;
-    console.log(`LED ${index + 1} ${action}`);
-    res.send({ message: `LED ${index + 1} ${action}`, status: ledStatus });
-  } else {
-    res.status(400).send({ error: 'Índice o acción no válida' });
-  }
-});
-
-// Ruta para encender/apagar todos los LEDs
 app.post('/control-todos-leds', (req, res) => {
   const { action } = req.body;
   if (action === 'on' || action === 'off') {
@@ -86,52 +69,70 @@ app.post('/control-todos-leds', (req, res) => {
   }
 });
 
-// Rutas para controlar la ventana
-app.post('/control-ventana', (req, res) => {
-  const { action } = req.body;
-  if (action === 'v' || action === 'v_off') {
-    ventanaStatus = action;
-    console.log(`Ventana ${action === 'v' ? 'abierta' : 'cerrada'}`);
-    res.send({ message: `Ventana ${action === 'v' ? 'abierta' : 'cerrada'}`, status: ventanaStatus });
-  } else {
-    res.status(400).send({ error: 'Acción no válida para la ventana' });
+app.get('/estado-led-db', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM led_status ORDER BY fecha_hora DESC');
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Error al obtener el estado de los LEDs desde la base de datos', err);
+    res.status(500).send('Error al obtener el estado de los LEDs');
   }
 });
 
-// Rutas para controlar la puerta
-app.post('/control-puerta', (req, res) => {
-  const { action } = req.body;
-  if (action === 'p' || action === 'p_off') {
-    puertaStatus = action;
-    console.log(`Puerta ${action === 'p' ? 'abierta' : 'cerrada'}`);
-    res.send({ message: `Puerta ${action === 'p' ? 'abierta' : 'cerrada'}`, status: puertaStatus });
-  } else {
-    res.status(400).send({ error: 'Acción no válida para la puerta' });
-  }
-});
-
-
-// Ruta para actualizar el estado de los sensores
-app.post('/estado-sensores', (req, res) => {
-  const { gas, agua, ldr } = req.body;
-  if (gas !== undefined && agua !== undefined && ldr !== undefined) {
-    sensorStatus = { gas, agua, ldr };
-    console.log('Estado de los sensores actualizado:', sensorStatus);
-    res.send({ message: 'Estado de los sensores actualizado', status: sensorStatus });
-  } else {
-    res.status(400).send({ error: 'Datos de sensores inválidos' });
+app.get('/bitacora', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM bitacora ORDER BY fecha_hora DESC');
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al obtener la bitácora');
   }
 });
 
 
 
-// Rutas opcionales para consultar estados
-app.get('/estado-led', (req, res) => res.send({ status: ledStatus }));
-app.get('/estado-ventana', (req, res) => res.send({ status: ventanaStatus }));
-app.get('/estado-puerta', (req, res) => res.send({ status: puertaStatus }));
-app.get('/estado-sensores', (req, res) => {res.send({ status: sensorStatus });});
+app.post('/configurar-led', async (req, res) => {
+  const { pin, action } = req.body; // Recibe el pin y la acción ('asignar' o 'liberar')
+  
+  if (typeof pin === 'number' && (action === 'asignar' || action === 'liberar')) {
+    try {
+      // Configuración del ESP8266: envía solicitud HTTP para configurar el pin
+      const response = await axios.post(`http://<ESP8266_IP>/configurar-pin`, {
+        pin: pin,
+        action: action
+      });
 
+      res.status(200).json({ message: response.data });
+    } catch (error) {
+      console.error('Error al configurar el pin:', error);
+      res.status(500).send('Error al configurar el pin en el ESP8266');
+    }
+  } else {
+    res.status(400).send({ error: 'Datos inválidos para la configuración del pin' });
+  }
+});
 
+// Rutas para los sensores
+app.post('/sensores', (req, res) => {
+  ldrState = req.body.ldrValue;
+  gasState = req.body.gasValue;
+  humidityState = req.body.humidityValue;
+  waterLevelState = req.body.waterLevelValue;
+
+  console.log(`Valores recibidos - LDR: ${ldrState}, Gas: ${gasState}, Humedad: ${humidityState}, Nivel de Agua: ${waterLevelState}`);
+  res.send('Valores de sensores recibidos');
+});
+
+app.get('/sensores', (req, res) => {
+  res.json({
+    ldrState,
+    gasState,
+    humidityState,
+    waterLevelState
+  });
+});
+
+// Iniciar el servidor
 app.listen(port, '0.0.0.0', () => {
-  console.log(`Servidor escuchando en http://134.209.219.161:${port}`);
+  console.log(`Servidor corriendo en http://134.209.219.161:${port}`);
 });

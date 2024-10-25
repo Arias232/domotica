@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitácora de Eventos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bitácora de Eventos</h1>
+
+    <table id="logTable">
+        <thead>
+            <tr>
+                <th>Botón</th>
+                <th>Estado</th>
+                <th>Fecha y Hora</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        async function loadLogEntries() {
+            try {
+                const response = await fetch('http://134.209.219.161:5000/bitacora'); // Cambia la URL si es necesario
+                const data = await response.json();
+                const logTableBody = document.getElementById('logTable').querySelector('tbody');
+                logTableBody.innerHTML = '';
+
+                data.forEach(entry => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${entry.boton}</td><td>${entry.estado}</td><td>${new Date(entry.fecha_hora).toLocaleString()}</td>`;
+                    logTableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error al cargar la bitácora:', error);
+            }
+        }
+
+        window.onload = () => {
+            loadLogEntries();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi App - Menú Principal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+        .sidenav {
+            height: 100vh;
+            width: 200px;
+            position: fixed;
+            z-index: 1;
+            top: 0;
+            left: 0;
+            background-color: #0000FF; /* Cambiado a celeste */
+            overflow-x: hidden;
+            padding-top: 20px;
+        }
+        .sidenav a {
+            padding: 6px 8px 6px 16px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #ffffff; /* Cambiado a blanco */
+            display: block;
+        }
+        .sidenav a:hover {
+            color: #87ceeb; /* Color celeste claro al pasar el ratón */
+        }
+        .app-title {
+            color: #ffffff; /* Cambiado a blanco */
+            font-size: 24px;
+            padding: 0 8px 20px 16px;
+            margin: 0;
+            border-bottom: 1px solid #ffffff; /* Cambiado a blanco */
+        }
+        .close-btn {
+            position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 36px;
+            margin-left: 50px;
+            color: #ffffff; /* Cambiado a blanco */
+            cursor: pointer;
+        }
+        .main-content {
+            margin-left: 200px;
+            flex-grow: 1;
+            padding: 20px;
+        }
+        iframe {
+            width: 100%;
+            height: calc(100vh - 40px);
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidenav">
+        <h1 class="app-title">Casa Domótica <span class="close-btn">&times;</span></h1>
+        <a href="#" onclick="loadContent('plano.html')">Plano</a>
+        <a href="#" onclick="loadContent('bitacora.html')">Bitácora</a>
+        <a href="#" onclick="loadContent('estado.html')">Estado</a>
+        <a href="#" onclick="loadContent('agregar.html')">Agregar Casa</a> <!-- Cambiado para cargar en el iframe -->
+    </div>
+
+    <div class="main-content">
+        <iframe id="content-frame" src="plano.html"></iframe>
+    </div>
+
+    <script>
+        function loadContent(page) {
+            document.getElementById('content-frame').src = page;
+        }
+    </script>
+    <script src="agregar.js"></script> <!-- Incluir el archivo agregar.js -->
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración de Pines para LEDs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Configuración de Pines para LEDs</h1>
+    <input type="number" id="pinInput" placeholder="Número de Pin">
+    <select id="actionSelect">
+        <option value="asignar">Asignar</option>
+        <option value="liberar">Liberar</option>
+    </select>
+    <button onclick="configurarPin()">Configurar Pin</button>
+
+    <script>
+        async function configurarPin() {
+            const pin = document.getElementById('pinInput').value;
+            const action = document.getElementById('actionSelect').value;
+
+            try {
+                const response = await fetch('http://localhost:5000/configurar-led', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ pin: parseInt(pin), action })
+                });
+
+                const data = await response.json();
+                alert(data.message);
+            } catch (error) {
+                console.error('Error al configurar el pin:', error);
+                alert('Error al configurar el pin en el ESP8266');
+            }
+        }
+    </script>
+</body>
+</html>

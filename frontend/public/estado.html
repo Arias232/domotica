@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estado de Dispositivos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Estado de Dispositivos</h1>
+
+    <h2>Estado de LEDs</h2>
+    <table id="ledTable">
+        <thead>
+            <tr>
+                <th>LED</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <h2>Estado de Sensores</h2>
+    <table id="sensorTable">
+        <thead>
+            <tr>
+                <th>Sensor</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        // Función para cargar el estado de los LEDs
+        async function loadLedStatus() {
+            try {
+                const response = await fetch('http://134.209.219.161:5000/estado-led') // Cambia la URL si es necesario
+                const data = await response.json();
+                const ledTableBody = document.getElementById('ledTable').querySelector('tbody');
+                ledTableBody.innerHTML = ''; // Limpiar tabla antes de llenarla
+
+                data.status.forEach((status, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>LED ${index + 1}</td><td>${status}</td>`;
+                    ledTableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error al cargar el estado de los LEDs:', error);
+            }
+        }
+
+        // Función para cargar el estado de los sensores
+        async function loadSensorStatus() {
+            try {
+                const response = await fetch('http://134.209.219.161:5000/estado-sensores'); // Cambia la URL si es necesario
+                const data = await response.json();
+                const sensorTableBody = document.getElementById('sensorTable').querySelector('tbody');
+                sensorTableBody.innerHTML = ''; // Limpiar tabla antes de llenarla
+
+                for (const [key, value] of Object.entries(data.status)) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${key}</td><td>${value}</td>`;
+                    sensorTableBody.appendChild(row);
+                }
+            } catch (error) {
+                console.error('Error al cargar el estado de los sensores:', error);
+            }
+        }
+
+        // Cargar datos al cargar la página
+        window.onload = () => {
+            loadLedStatus();
+            loadSensorStatus();
+        };
+    </script>
+</body>
+</html>

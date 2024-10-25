@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoreo de Sensores en Tiempo Real</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #1a237e;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .sensor-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .sensor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .sensor-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .sensor-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+            transition: color 0.3s ease;
+        }
+
+        .sensor-status {
+            font-size: 1em;
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .last-update {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script>
+        const API_URL = 'http://134.209.219.161:5000/sensores';
+        let lastUpdateTime = new Date();
+
+        function getSensorStatus(type, value) {
+            // Asegurarse de que value sea un número
+            const numValue = Number(value);
+            
+            const ranges = {
+                ldr: [
+                    { max: 200, color: '#ff0000', text: 'Muy Oscuro', textColor: 'white' },
+                    { max: 500, color: '#ff9800', text: 'Oscuro', textColor: 'black' },
+                    { max: 800, color: '#4caf50', text: 'Normal', textColor: 'white' },
+                    { max: Infinity, color: '#2196f3', text: 'Brillante', textColor: 'white' }
+                ],
+                gas: [
+                    { max: 100, color: '#4caf50', text: 'Normal', textColor: 'white' },
+                    { max: 300, color: '#ff9800', text: 'Elevado', textColor: 'black' },
+                    { max: 500, color: '#f44336', text: 'Alto', textColor: 'white' },
+                    { max: Infinity, color: '#b71c1c', text: 'Peligroso', textColor: 'white' }
+                ],
+                humidity: [
+                    { max: 20, color: '#ff0000', text: 'Muy Seco', textColor: 'white' },
+                    { max: 40, color: '#ff9800', text: 'Seco', textColor: 'black' },
+                    { max: 60, color: '#4caf50', text: 'Óptimo', textColor: 'white' },
+                    { max: 80, color: '#ff9800', text: 'Húmedo', textColor: 'black' },
+                    { max: Infinity, color: '#ff0000', text: 'Muy Húmedo', textColor: 'white' }
+                ],
+                waterLevel: [
+                    { max: 0, color: '#ff0000', text: 'Vacío', textColor: 'white' },
+                    { max: 1, color: '#ff9800', text: 'Bajo', textColor: 'black' },
+                    { max: 2, color: '#4caf50', text: 'Normal', textColor: 'white' },
+                    { max: Infinity, color: '#2196f3', text: 'Alto', textColor: 'white' }
+                ]
+            };
+
+            const range = ranges[type];
+            for (const status of range) {
+                if (numValue <= status.max) {
+                    return status;
+                }
+            }
+            return range[range.length - 1];
+        }
+
+        function updateLastUpdateTime() {
+            const timeElement = document.getElementById('lastUpdate');
+            const now = new Date();
+            const diff = now - lastUpdateTime;
+            const seconds = Math.floor(diff / 1000);
+            
+            if (seconds < 60) {
+                timeElement.textContent = `Última actualización: hace ${seconds} segundos`;
+            } else {
+                const minutes = Math.floor(seconds / 60);
+                timeElement.textContent = `Última actualización: hace ${minutes} minutos`;
+            }
+        }
+
+        async function actualizarSensores() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Error en la conexión');
+                
+                const data = await response.json();
+                lastUpdateTime = new Date();
+                
+                // Actualizar estado de conexión
+                const connectionStatus = document.getElementById('connectionStatus');
+                connectionStatus.textContent = 'Conectado';
+                connectionStatus.style.backgroundColor = '#4caf50';
+                connectionStatus.style.color = 'white';
+
+                // Función para actualizar cada sensor
+                function updateSensor(id, value, type) {
+                    const card = document.getElementById(id);
+                    const valueElement = card.querySelector('.sensor-value');
+                    const statusElement = card.querySelector('.sensor-status');
+                    
+                    // Convertir el valor a número y manejar casos especiales
+                    const numValue = Number(value);
+                    const displayValue = isNaN(numValue) ? value : numValue.toFixed(1);
+                    
+                    const status = getSensorStatus(type, numValue);
+                    
+                    valueElement.textContent = displayValue;
+                    valueElement.style.color = status.color;
+                    
+                    statusElement.textContent = status.text;
+                    statusElement.style.backgroundColor = status.color;
+                    statusElement.style.color = status.textColor;
+                }
+
+                // Actualizar cada sensor
+                updateSensor('ldrCard', data.ldrState, 'ldr');
+                updateSensor('gasCard', data.gasState, 'gas');
+                updateSensor('humidityCard', data.humidityState, 'humidity');
+                updateSensor('waterLevelCard', data.waterLevelState, 'waterLevel');
+
+            } catch (error) {
+                console.error('Error:', error);
+                const connectionStatus = document.getElementById('connectionStatus');
+                connectionStatus.textContent = 'Desconectado';
+                connectionStatus.style.backgroundColor = '#f44336';
+                connectionStatus.style.color = 'white';
+            }
+            
+            updateLastUpdateTime();
+        }
+
+        // Inicializar la actualización de sensores
+        document.addEventListener('DOMContentLoaded', () => {
+            actualizarSensores();
+            setInterval(actualizarSensores, 2000);
+            setInterval(updateLastUpdateTime, 1000);
+        });
+    </script>
+</head>
+<body>
+    <div id="connectionStatus" class="connection-status">Conectando...</div>
+    <h1>Monitoreo de Sensores en Tiempo Real</h1>
+    
+    <div class="dashboard">
+        <div id="ldrCard" class="sensor-card">
+            <div class="sensor-title">Sensor de Luz (LDR)</div>
+            <div class="sensor-value">--</div>
+            <div class="sensor-status">Esperando datos...</div>
+        </div>
+        
+        <div id="gasCard" class="sensor-card">
+            <div class="sensor-title">Sensor de Gas</div>
+            <div class="sensor-value">--</div>
+            <div class="sensor-status">Esperando datos...</div>
+        </div>
+        
+        <div id="humidityCard" class="sensor-card">
+            <div class="sensor-title">Sensor de Humedad</div>
+            <div class="sensor-value">--</div>
+            <div class="sensor-status">Esperando datos...</div>
+        </div>
+        
+        <div id="waterLevelCard" class="sensor-card">
+            <div class="sensor-title">Nivel de Agua</div>
+            <div class="sensor-value">--</div>
+            <div class="sensor-status">Esperando datos...</div>
+        </div>
+    </div>
+
+    <div id="lastUpdate" class="last-update">Última actualización: --</div>
+</body>
+</html>
