@@ -11,6 +11,7 @@ const pool = new Pool({
   user: 'doadmin',
   host: 'db-postgresql-nyc1-78611-do-user-12658703-0.k.db.ondigitalocean.com',
   database: 'defaultdb',
+  password: 'AVNS_pv7340WdNUnbwLrv0IM',
   port: 25060,
   ssl: { rejectUnauthorized: false }
 });
