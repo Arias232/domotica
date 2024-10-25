@@ -1,0 +1,27 @@
+name: Deploy to Digital Ocean
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: SSH to DigitalOcean and deploy
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.DIGITALOCEAN_HOST }}
+        username: root
+        password: ${{ secrets.DIGITALOCEAN_PASSWORD }}
+        port: 22
+        script: |
+          cd ~/domotica
+          git pull origin main
+          docker-compose down
+          docker-compose up -d --build
