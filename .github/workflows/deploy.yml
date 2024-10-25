@@ -1,9 +1,9 @@
-name: Deploy to Digital Ocean
+name: Deploy to Digital Ocean 
 
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
@@ -16,9 +16,9 @@ jobs:
     - name: SSH to DigitalOcean and deploy
       uses: appleboy/ssh-action@v0.1.7
       with:
-        host: ${{ secrets.DIGITALOCEAN_HOST }}
-        username: root
-        password: ${{ secrets.DIGITALOCEAN_PASSWORD }}
+        host: '134.209.219.161'
+        username: 'root'
+        password: 'TonikakuK1B' 
         port: 22
         script: |
           cd ~/domotica
